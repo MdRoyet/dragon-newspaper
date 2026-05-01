@@ -3,13 +3,11 @@ import Link from "next/link";
 import { FaArrowLeft } from "react-icons/fa";
 import RightSidebar from "@/components/shared/RightSidebar";
 
-// 1. FORCE DYNAMIC RENDERING (This stops Vercel from breaking the params)
-export const dynamic = "force-dynamic";
-
-export async function generateMetadata(props) {
-  // Safely handle params for both Next 14 and Next 15
-  const params = await props.params;
-  const id = params?.id || props.params?.id;
+// 1. Destructure exactly { params } so Vercel's compiler recognizes it
+export async function generateMetadata({ params }) {
+  // Await the promise directly
+  const resolvedParams = await params;
+  const id = resolvedParams.id;
 
   try {
     const res = await fetch(
@@ -23,37 +21,32 @@ export async function generateMetadata(props) {
   }
 }
 
-// 2. Accept RAW props to guarantee we catch what Vercel sends
-const NewsDetails = async (props) => {
-  // Safely extract the ID regardless of Next.js version
-  const params = await props.params;
-  const id = params?.id || props.params?.id;
+// 2. Same here: explicitly request { params }
+export default async function NewsDetails({ params }) {
+  // 3. Await the params promise to extract the ID
+  const resolvedParams = await params;
+  const id = resolvedParams.id;
 
-  // 3. Failsafe screen to see EXACTLY what is broken if it fails again
+  // Failsafe
   if (!id) {
     return (
       <div className="p-20 text-center">
-        <h1 className="text-3xl font-bold text-red-500 mb-4">
-          ID is completely missing!
-        </h1>
-        <p className="mb-4">Here is what Vercel is actually seeing:</p>
-        <pre className="bg-gray-200 p-6 rounded text-left overflow-auto max-w-2xl mx-auto font-mono text-sm">
-          {JSON.stringify(props, null, 2)}
-        </pre>
-        <Link href="/" className="text-blue-500 underline mt-8 inline-block">
+        <h1 className="text-3xl font-bold text-red-500 mb-4">Routing Error</h1>
+        <p>The ID failed to load. Please try returning to the home page.</p>
+        <Link href="/" className="text-blue-500 underline mt-4 inline-block">
           Back to Home
         </Link>
       </div>
     );
   }
 
-  // 4. Fetch Data safely
+  // 4. Fetch the News securely
   let news = null;
   try {
     const res = await fetch(
       `https://openapi.programming-hero.com/api/news/${id}`,
       {
-        cache: "no-store", // Double protection against Vercel caching
+        cache: "no-store", // Ensures fresh data
       },
     );
     const result = await res.json();
@@ -83,6 +76,7 @@ const NewsDetails = async (props) => {
     );
   }
 
+  // 6. Main UI
   return (
     <main className="container mx-auto my-10 px-4">
       <div className="grid grid-cols-12 gap-8">
@@ -117,6 +111,4 @@ const NewsDetails = async (props) => {
       </div>
     </main>
   );
-};
-
-export default NewsDetails;
+}

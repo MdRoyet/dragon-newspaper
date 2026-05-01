@@ -1,7 +1,13 @@
 import { createAuthClient } from "better-auth/react";
-export const authClient = createAuthClient({
-  /** The base URL of the server (optional if you're using the same domain) */
-  baseURL: process.env.NEXT_PUBLIC_APP_URL,
-});
 
-export const { signIn, signUp, useSession } = createAuthClient();
+// Detect if we are in a browser and what the URL is
+const getBaseUrl = () => {
+  if (typeof window !== "undefined") {
+    return window.location.origin; // This will return 'https://dragon-newspaper-nu.vercel.app' on Vercel
+  }
+  return process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+};
+
+export const authClient = createAuthClient({
+  baseURL: getBaseUrl(),
+});

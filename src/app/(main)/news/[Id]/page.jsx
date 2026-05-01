@@ -1,35 +1,55 @@
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { FaArrowLeft } from "react-icons/fa";
+import RightSidebar from "@/components/shared/RightSidebar";
 
-// 1. Mark as async to handle Next.js 15 params Promise
-const NewsDetails = async ({ params }) => {
-  // 2. Resolve params safely
-  const resolvedParams = await params;
-  const newsId = resolvedParams?.id;
+/**
+ * 1. Dynamic Metadata Generation
+ * This ensures social media previews (Facebook, X, etc.) show the correct news title and image.
+ */
+export async function generateMetadata({ params }) {
+  const { id } = await params;
 
-  // 3. Fallback if ID is missing to prevent Invariant Error
-  if (!newsId) {
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <p className="text-xl font-bold">Error: Invalid News ID</p>
-      </div>
+  try {
+    const res = await fetch(
+      `https://openapi.programming-hero.com/api/news/${id}`,
     );
-  }
+    const result = await res.json();
+    const news = result.data?.[0];
 
-  // 4. Fetch the data (using no-store to ensure fresh results)
+    if (!news) return { title: "News Not Found | Dragon News" };
+
+    return {
+      title: `${news.title} | Dragon News`,
+      description: news.details.slice(0, 150) + "...",
+      openGraph: {
+        images: [news.image_url],
+      },
+    };
+  } catch (error) {
+    return { title: "Dragon News" };
+  }
+}
+
+/**
+ * 2. Main Page Component
+ */
+const NewsDetails = async ({ params }) => {
+  // Await params for Next.js 15
+  const { id } = await params;
+
+  // Fetch the specific news article
   const res = await fetch(
-    `https://openapi.programming-hero.com/api/news/${newsId}`,
+    `https://openapi.programming-hero.com/api/news/${id}`,
     {
       cache: "no-store",
     },
   );
   const result = await res.json();
+  const news = result.data && result.data.length > 0 ? result.data[0] : null;
 
-  // The API returns an array in data.data
-  const news = result?.data?.[0];
-
-  // 5. If API returns success but no news found
+  // Handle Case: News Not Found
   if (!news) {
     return (
       <div className="container mx-auto my-20 text-center">
@@ -43,14 +63,16 @@ const NewsDetails = async ({ params }) => {
 
   return (
     <main className="container mx-auto my-10 px-4">
+      {/* 12-Column Grid Layout */}
       <div className="grid grid-cols-12 gap-8">
-        {/* Left Side: Detailed News Content */}
+        {/* Left Side: Article Content (9 Columns) */}
         <section className="col-span-12 lg:col-span-9">
           <h2 className="text-xl font-bold mb-6 text-gray-900">Dragon News</h2>
 
           <div className="bg-white border border-gray-200 rounded-xl p-6 md:p-10 shadow-sm">
-            {/* Main Article Image */}
+            {/* Main News Image */}
             <div className="mb-8 overflow-hidden rounded-lg">
+              {/* Using standard img for API URL images, or <Image /> if you prefer */}
               <img
                 src={news.image_url}
                 alt={news.title}
@@ -58,17 +80,17 @@ const NewsDetails = async ({ params }) => {
               />
             </div>
 
-            {/* News Title */}
+            {/* News Headline */}
             <h1 className="text-3xl font-extrabold text-gray-900 mb-6 leading-tight">
               {news.title}
             </h1>
 
-            {/* News Body Text */}
+            {/* News Full Details */}
             <p className="text-gray-600 text-lg leading-8 mb-10 text-justify whitespace-pre-line">
               {news.details}
             </p>
 
-            {/* Red Back Button */}
+            {/* "All news in this category" Red Button */}
             <div className="border-t pt-8">
               <Link
                 href={`/category/${news.category_id || "01"}`}
@@ -80,15 +102,9 @@ const NewsDetails = async ({ params }) => {
           </div>
         </section>
 
-        {/* Right Side: Sidebar */}
+        {/* Right Side: Sidebar (3 Columns) */}
         <aside className="col-span-12 lg:col-span-3">
-          <div className="space-y-8">
-            <h2 className="font-bold text-xl text-gray-900">Login With</h2>
-            {/* Placeholder for Social Login Components */}
-            <div className="border-2 border-dashed border-gray-200 rounded-lg h-40 flex items-center justify-center text-gray-400 font-medium">
-              Sidebar Content
-            </div>
-          </div>
+          <RightSidebar />
         </aside>
       </div>
     </main>

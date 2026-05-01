@@ -1,5 +1,6 @@
 import AllNewsCategory from "@/components/shared/AllNewsCategory";
 import MainNewsSection from "@/components/shared/MainNewsSection";
+import RightSidebar from "@/components/shared/RightSidebar";
 
 export default async function CategoryPage({ params }) {
   // MUST await params in Next.js 15
@@ -20,7 +21,7 @@ export default async function CategoryPage({ params }) {
 
         {/* Right Sidebar */}
         <aside className="col-span-3">
-          <h2 className="font-bold text-xl mb-4">Login With</h2>
+          <RightSidebar></RightSidebar>
           {/* Add your Right Sidebar content here */}
         </aside>
       </div>

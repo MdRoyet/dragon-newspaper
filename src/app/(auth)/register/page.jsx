@@ -1,86 +1,84 @@
+"use client";
+import { useState } from "react";
 import Link from "next/link";
+import { authClient } from "@/lib/auth-client";
+import { useRouter } from "next/navigation";
 
 const RegisterPage = () => {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    const form = e.target;
+    const name = form.name.value;
+    const email = form.email.value;
+    const password = form.password.value;
+
+    const { error } = await authClient.signUp.email({
+      email,
+      password,
+      name,
+      callbackURL: "/login",
+    });
+
+    if (error) {
+      alert(error.message || "Registration failed");
+      setLoading(false);
+    } else {
+      router.push("/login");
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#F3F3F3] py-12 px-4">
-      <div className="max-w-2xl w-full bg-white p-10 md:p-16 rounded-lg shadow-sm">
-        <h2 className="text-4xl font-bold text-center text-[#403F3F] mb-12">
+      <div className="max-w-2xl w-full bg-white p-10 md:p-16 rounded-none shadow-sm">
+        <h2 className="text-3xl font-bold text-center text-[#403F3F] mb-10">
           Register your account
         </h2>
-
-        <hr className="mb-12 border-gray-200" />
-
-        <form className="space-y-6">
-          {/* Name Field */}
+        <hr className="mb-10" />
+        <form onSubmit={handleRegister} className="space-y-6">
           <div className="form-control">
-            <label className="label">
-              <span className="label-text font-bold text-xl text-[#403F3F]">
-                Your Name
-              </span>
-            </label>
+            <label className="label font-bold text-[#403F3F]">Your Name</label>
             <input
+              name="name"
               type="text"
-              placeholder="Enter your name"
-              className="input w-full bg-[#F3F3F3] border-none focus:outline-none p-6 rounded-md"
+              placeholder="Enter name"
+              className="input w-full bg-[#F3F3F3] p-5 rounded-md outline-none"
               required
             />
           </div>
-
-          {/* Email Field */}
           <div className="form-control">
-            <label className="label">
-              <span className="label-text font-bold text-xl text-[#403F3F]">
-                Email
-              </span>
-            </label>
+            <label className="label font-bold text-[#403F3F]">Email</label>
             <input
+              name="email"
               type="email"
-              placeholder="Enter your email address"
-              className="input w-full bg-[#F3F3F3] border-none focus:outline-none p-6 rounded-md"
+              placeholder="Enter email"
+              className="input w-full bg-[#F3F3F3] p-5 rounded-md outline-none"
               required
             />
           </div>
-
-          {/* Password Field */}
           <div className="form-control">
-            <label className="label">
-              <span className="label-text font-bold text-xl text-[#403F3F]">
-                Password
-              </span>
-            </label>
+            <label className="label font-bold text-[#403F3F]">Password</label>
             <input
+              name="password"
               type="password"
-              placeholder="Enter your password"
-              className="input w-full bg-[#F3F3F3] border-none focus:outline-none p-6 rounded-md"
+              placeholder="Enter password"
+              className="input w-full bg-[#F3F3F3] p-5 rounded-md outline-none"
               required
             />
           </div>
-
-          {/* Term and Conditions */}
-          <div className="flex items-center gap-2 mt-4">
-            <input
-              type="checkbox"
-              className="checkbox checkbox-sm rounded-sm"
-              id="terms"
-            />
-            <label
-              htmlFor="terms"
-              className="text-[#706F6F] font-semibold cursor-pointer"
-            >
-              Accept <span className="text-[#403F3F]">Term & Conditions</span>
-            </label>
-          </div>
-
-          <div className="form-control mt-8">
-            <button className="btn w-full bg-[#403F3F] hover:bg-black text-white py-4 rounded-md text-xl font-semibold border-none">
-              Register
-            </button>
-          </div>
+          <button
+            disabled={loading}
+            className="w-full bg-[#403F3F] text-white py-4 mt-4 font-semibold"
+          >
+            {loading ? "Creating account..." : "Register"}
+          </button>
         </form>
-
-        <p className="text-center mt-8 text-[#706F6F] font-semibold">
+        <p className="text-center mt-8 font-semibold text-[#706F6F]">
           Already Have An Account?{" "}
-          <Link href="/login" className="text-[#F75B5F] hover:underline">
+          <Link href="/login" className="text-[#F75B5F]">
             Login
           </Link>
         </p>

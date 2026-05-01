@@ -1,60 +1,84 @@
 "use client";
-
 import React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { authClient } from "@/lib/auth-client";
+import { useRouter } from "next/navigation";
+import { FaUserCircle } from "react-icons/fa";
 
 const NavBar = () => {
-  const pathname = usePathname();
+  const router = useRouter();
+  const { data: session } = authClient.useSession();
+  const user = session?.user;
 
-  const getLinkClassName = (href) => {
-    const isActive = pathname === href;
-
-    return `relative py-1 transition-all duration-300 font-medium text-lg border-b-2 ${
-      isActive
-        ? "text-gray-900 border-gray-900"
-        : "text-gray-500 border-transparent hover:text-gray-900 hover:border-gray-400"
-    }`;
+  const handleLogout = async () => {
+    await authClient.signOut({
+      fetchOptions: {
+        onSuccess: () => {
+          router.push("/login");
+          router.refresh();
+        },
+      },
+    });
   };
 
   return (
-    <nav className="w-full bg-white py-6 border-b border-gray-100">
-      <div className="container mx-auto flex items-center px-4">
-        {/* 1. Left Spacer */}
-        <div className="flex-1" />
+    <nav className="flex justify-between items-center py-5 container mx-auto px-4">
+      <div className="w-1/3"></div>
 
-        {/* 2. Center: Navigation Links */}
-        <div className="flex flex-1 justify-center space-x-10">
-          <Link href="/" className={getLinkClassName("/")}>
-            Home
-          </Link>
-          <Link href="/about" className={getLinkClassName("/about")}>
-            About
-          </Link>
-          <Link href="/career" className={getLinkClassName("/career")}>
-            Career
-          </Link>
-        </div>
+      <div className="flex gap-6 text-[#706F6F] font-semibold">
+        <Link href="/" className="hover:text-black">
+          Home
+        </Link>
+        <Link href="/about" className="hover:text-black">
+          About
+        </Link>
+        <Link href="/career" className="hover:text-black">
+          Career
+        </Link>
+      </div>
 
-        {/* 3. Right side: Profile and Login */}
-        <div className="flex flex-1 items-center justify-end space-x-4">
-          <div className="w-10 h-10 rounded-full border-2 border-black flex items-center justify-center overflow-hidden cursor-pointer hover:opacity-80 transition-opacity">
-            <svg
-              viewBox="0 0 24 24"
-              fill="currentColor"
-              className="w-8 h-8 text-black mt-2"
+      <div className="flex items-center gap-3 w-1/3 justify-end">
+        {user ? (
+          <div className="flex items-center gap-3">
+            <div className="text-right hidden sm:block">
+              <p className="text-sm font-bold text-[#403F3F] leading-none">
+                {user.name}
+              </p>
+              <p className="text-[10px] text-gray-400 mt-1">
+                Active Session:{" "}
+                {new Date().toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </p>
+            </div>
+            {user.image ? (
+              <img
+                src={user.image}
+                className="w-10 h-10 rounded-full border border-gray-200"
+                alt="Profile"
+              />
+            ) : (
+              <FaUserCircle className="text-4xl text-gray-700" />
+            )}
+            <button
+              onClick={handleLogout}
+              className="bg-[#403F3F] text-white px-7 py-2 rounded-none font-semibold hover:bg-black transition-all"
             >
-              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-            </svg>
+              Logout
+            </button>
           </div>
-
-          <Link
-            href="/login"
-            className="bg-[#444444] text-white px-9 py-2 font-semibold hover:bg-gray-700 transition-colors"
-          >
-            Login
-          </Link>
-        </div>
+        ) : (
+          <div className="flex items-center gap-3">
+            <FaUserCircle className="text-4xl text-gray-700" />
+            <Link
+              href="/login"
+              className="bg-[#403F3F] text-white px-9 py-2 rounded-none font-semibold hover:bg-black transition-all"
+            >
+              Login
+            </Link>
+          </div>
+        )}
       </div>
     </nav>
   );

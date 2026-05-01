@@ -3,9 +3,11 @@ import Link from "next/link";
 import { FaArrowLeft } from "react-icons/fa";
 import RightSidebar from "@/components/shared/RightSidebar";
 
-// 1. Destructure exactly { params } so Vercel's compiler recognizes it
+// 1. Force dynamic rendering so Vercel doesn't cache an empty page
+export const dynamic = "force-dynamic";
+
+// 2. Strict Metadata Promise Unwrapping
 export async function generateMetadata({ params }) {
-  // Await the promise directly
   const resolvedParams = await params;
   const id = resolvedParams.id;
 
@@ -21,24 +23,33 @@ export async function generateMetadata({ params }) {
   }
 }
 
-// 2. Same here: explicitly request { params }
+// 3. Strict Page Promise Unwrapping
 export default async function NewsDetails({ params }) {
-  // 3. Await the params promise to extract the ID
+  // We await the params object explicitly first
   const resolvedParams = await params;
   const id = resolvedParams.id;
 
-  // Failsafe
+  // --- DEBUG SCREEN (Just in case) ---
   if (!id) {
     return (
       <div className="p-20 text-center">
-        <h1 className="text-3xl font-bold text-red-500 mb-4">Routing Error</h1>
-        <p>The ID failed to load. Please try returning to the home page.</p>
-        <Link href="/" className="text-blue-500 underline mt-4 inline-block">
+        <h1 className="text-3xl font-bold text-red-500 mb-4">
+          Vercel Debug Screen
+        </h1>
+        <p className="mb-4">
+          The Promise has been unwrapped. Next.js sees this:
+        </p>
+        <pre className="bg-gray-200 p-6 rounded inline-block font-mono text-sm text-red-600">
+          {JSON.stringify(resolvedParams, null, 2)}
+        </pre>
+        <br />
+        <Link href="/" className="text-blue-500 underline mt-8 inline-block">
           Back to Home
         </Link>
       </div>
     );
   }
+  // -----------------------------------
 
   // 4. Fetch the News securely
   let news = null;
@@ -46,7 +57,7 @@ export default async function NewsDetails({ params }) {
     const res = await fetch(
       `https://openapi.programming-hero.com/api/news/${id}`,
       {
-        cache: "no-store", // Ensures fresh data
+        cache: "no-store",
       },
     );
     const result = await res.json();

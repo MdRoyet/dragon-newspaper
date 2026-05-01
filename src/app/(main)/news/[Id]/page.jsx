@@ -3,11 +3,13 @@ import Link from "next/link";
 import { FaArrowLeft } from "react-icons/fa";
 import RightSidebar from "@/components/shared/RightSidebar";
 
-/**
- * 1. Metadata Function (Must also await params in Next.js 15)
- */
-export async function generateMetadata({ params }) {
-  const { id } = await params;
+// 1. FORCE DYNAMIC RENDERING (This stops Vercel from breaking the params)
+export const dynamic = "force-dynamic";
+
+export async function generateMetadata(props) {
+  // Safely handle params for both Next 14 and Next 15
+  const params = await props.params;
+  const id = params?.id || props.params?.id;
 
   try {
     const res = await fetch(
@@ -15,42 +17,43 @@ export async function generateMetadata({ params }) {
     );
     const result = await res.json();
     const news = result.data?.[0];
-
-    return {
-      title: news ? `${news.title} | Dragon News` : "News Details",
-    };
+    return { title: news ? `${news.title} | Dragon News` : "News Details" };
   } catch (error) {
     return { title: "Dragon News" };
   }
 }
 
-/**
- * 2. Main Page Component
- */
-const NewsDetails = async ({ params }) => {
-  // CRITICAL: Await params to avoid 'undefined' error in Next.js 15
-  const resolvedParams = await params;
-  const id = resolvedParams?.id;
+// 2. Accept RAW props to guarantee we catch what Vercel sends
+const NewsDetails = async (props) => {
+  // Safely extract the ID regardless of Next.js version
+  const params = await props.params;
+  const id = params?.id || props.params?.id;
 
-  // 1. Check if ID exists before fetching
+  // 3. Failsafe screen to see EXACTLY what is broken if it fails again
   if (!id) {
     return (
-      <div className="text-center p-20">
-        <h2 className="text-2xl font-bold">Invalid Article ID</h2>
-        <Link href="/" className="text-blue-500 underline mt-4 inline-block">
+      <div className="p-20 text-center">
+        <h1 className="text-3xl font-bold text-red-500 mb-4">
+          ID is completely missing!
+        </h1>
+        <p className="mb-4">Here is what Vercel is actually seeing:</p>
+        <pre className="bg-gray-200 p-6 rounded text-left overflow-auto max-w-2xl mx-auto font-mono text-sm">
+          {JSON.stringify(props, null, 2)}
+        </pre>
+        <Link href="/" className="text-blue-500 underline mt-8 inline-block">
           Back to Home
         </Link>
       </div>
     );
   }
 
-  // 2. Fetch the specific news article
+  // 4. Fetch Data safely
   let news = null;
   try {
     const res = await fetch(
       `https://openapi.programming-hero.com/api/news/${id}`,
       {
-        cache: "no-store",
+        cache: "no-store", // Double protection against Vercel caching
       },
     );
     const result = await res.json();
@@ -59,7 +62,7 @@ const NewsDetails = async ({ params }) => {
     console.error("Fetch error:", err);
   }
 
-  // 3. Handle Case: News Not Found
+  // 5. Normal Not Found Screen
   if (!news) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[70vh] text-center p-20">
@@ -67,7 +70,7 @@ const NewsDetails = async ({ params }) => {
           Article not found.
         </h1>
         <p className="text-gray-500 mb-8 text-lg">
-          Attempted ID:{" "}
+          The API returned no data for ID:{" "}
           <span className="font-mono bg-gray-100 px-2 py-1 rounded">{id}</span>
         </p>
         <Link
@@ -82,33 +85,21 @@ const NewsDetails = async ({ params }) => {
 
   return (
     <main className="container mx-auto my-10 px-4">
-      {/* 12-Column Grid Layout */}
       <div className="grid grid-cols-12 gap-8">
-        {/* Left Side: Article Content (9 Columns) */}
         <section className="col-span-12 lg:col-span-9">
           <h2 className="text-xl font-bold mb-6 text-[#403F3F]">Dragon News</h2>
-
           <div className="bg-white border border-gray-200 rounded-lg p-6 md:p-10 shadow-sm">
-            {/* Main News Image */}
-            <div className="mb-8 overflow-hidden rounded-lg">
-              <img
-                src={news.image_url}
-                alt={news.title}
-                className="w-full h-auto object-cover"
-              />
-            </div>
-
-            {/* News Headline */}
+            <img
+              src={news.image_url}
+              alt={news.title}
+              className="w-full h-auto mb-6 rounded-md"
+            />
             <h1 className="text-3xl font-extrabold text-[#403F3F] mb-6 leading-tight">
               {news.title}
             </h1>
-
-            {/* News Full Details */}
             <p className="text-[#706F6F] text-lg leading-8 mb-10 text-justify whitespace-pre-line">
               {news.details}
             </p>
-
-            {/* Back Button */}
             <div className="border-t pt-8">
               <Link
                 href={`/category/${news.category_id || "01"}`}
@@ -120,7 +111,6 @@ const NewsDetails = async ({ params }) => {
           </div>
         </section>
 
-        {/* Right Side: Sidebar (3 Columns) */}
         <aside className="col-span-12 lg:col-span-3">
           <RightSidebar />
         </aside>

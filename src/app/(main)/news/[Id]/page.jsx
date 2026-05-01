@@ -6,10 +6,11 @@ import RightSidebar from "@/components/shared/RightSidebar";
 // 1. Force dynamic rendering so Vercel doesn't cache an empty page
 export const dynamic = "force-dynamic";
 
-// 2. Strict Metadata Promise Unwrapping
+// 2. Generate Metadata for SEO and Social Sharing
 export async function generateMetadata({ params }) {
   const resolvedParams = await params;
-  const id = resolvedParams.id;
+  // Safely extract the ID, checking for both capital 'I' and lowercase 'i'
+  const id = resolvedParams?.Id || resolvedParams?.id;
 
   try {
     const res = await fetch(
@@ -17,41 +18,43 @@ export async function generateMetadata({ params }) {
     );
     const result = await res.json();
     const news = result.data?.[0];
-    return { title: news ? `${news.title} | Dragon News` : "News Details" };
+
+    return {
+      title: news ? `${news.title} | Dragon News` : "News Details",
+      openGraph: {
+        images: [news?.image_url],
+      },
+    };
   } catch (error) {
     return { title: "Dragon News" };
   }
 }
 
-// 3. Strict Page Promise Unwrapping
+// 3. Main Page Component
 export default async function NewsDetails({ params }) {
-  // We await the params object explicitly first
+  // Await the params object explicitly first (Next.js 15 requirement)
   const resolvedParams = await params;
-  const id = resolvedParams.id;
 
-  // --- DEBUG SCREEN (Just in case) ---
+  // Safely extract the ID, checking for both capital 'I' and lowercase 'i'
+  const id = resolvedParams?.Id || resolvedParams?.id;
+
+  // Failsafe: If ID is still somehow missing
   if (!id) {
     return (
-      <div className="p-20 text-center">
-        <h1 className="text-3xl font-bold text-red-500 mb-4">
-          Vercel Debug Screen
-        </h1>
-        <p className="mb-4">
-          The Promise has been unwrapped. Next.js sees this:
-        </p>
-        <pre className="bg-gray-200 p-6 rounded inline-block font-mono text-sm text-red-600">
-          {JSON.stringify(resolvedParams, null, 2)}
-        </pre>
-        <br />
-        <Link href="/" className="text-blue-500 underline mt-8 inline-block">
+      <div className="flex flex-col items-center justify-center min-h-[70vh] text-center p-20">
+        <h1 className="text-3xl font-bold text-red-500 mb-4">Routing Error</h1>
+        <p className="text-gray-600 mb-6">The Article ID could not be found.</p>
+        <Link
+          href="/"
+          className="text-white bg-[#403F3F] px-8 py-3 font-semibold hover:bg-black transition-all"
+        >
           Back to Home
         </Link>
       </div>
     );
   }
-  // -----------------------------------
 
-  // 4. Fetch the News securely
+  // Fetch the News securely
   let news = null;
   try {
     const res = await fetch(
@@ -66,7 +69,7 @@ export default async function NewsDetails({ params }) {
     console.error("Fetch error:", err);
   }
 
-  // 5. Normal Not Found Screen
+  // Normal Not Found Screen if API returns nothing for that ID
   if (!news) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[70vh] text-center p-20">
@@ -87,28 +90,33 @@ export default async function NewsDetails({ params }) {
     );
   }
 
-  // 6. Main UI
+  // Main UI
   return (
     <main className="container mx-auto my-10 px-4">
       <div className="grid grid-cols-12 gap-8">
+        {/* Left Side: Article Content */}
         <section className="col-span-12 lg:col-span-9">
           <h2 className="text-xl font-bold mb-6 text-[#403F3F]">Dragon News</h2>
+
           <div className="bg-white border border-gray-200 rounded-lg p-6 md:p-10 shadow-sm">
             <img
               src={news.image_url}
               alt={news.title}
-              className="w-full h-auto mb-6 rounded-md"
+              className="w-full h-auto mb-6 rounded-md object-cover"
             />
+
             <h1 className="text-3xl font-extrabold text-[#403F3F] mb-6 leading-tight">
               {news.title}
             </h1>
+
             <p className="text-[#706F6F] text-lg leading-8 mb-10 text-justify whitespace-pre-line">
               {news.details}
             </p>
+
             <div className="border-t pt-8">
               <Link
                 href={`/category/${news.category_id || "01"}`}
-                className="bg-[#D72050] text-white px-8 py-4 font-bold flex items-center gap-3 w-fit hover:bg-red-700 transition-all"
+                className="bg-[#D72050] text-white px-8 py-4 font-bold flex items-center gap-3 w-fit hover:bg-red-700 transition-all rounded-sm"
               >
                 <FaArrowLeft /> All news in this category
               </Link>
@@ -116,6 +124,7 @@ export default async function NewsDetails({ params }) {
           </div>
         </section>
 
+        {/* Right Side: Sidebar */}
         <aside className="col-span-12 lg:col-span-3">
           <RightSidebar />
         </aside>

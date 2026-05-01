@@ -7,31 +7,33 @@ const MainNewsSection = ({ categoryId }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!categoryId) return;
+
     setLoading(true);
-    // This runs every time categoryId changes
+    // Double check this URL string
     fetch(
       `https://openapi.programming-hero.com/api/news/category/${categoryId}`,
     )
       .then((res) => res.json())
       .then((data) => {
-        setNewsList(data.data);
+        setNewsList(data.data || []);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Fetch error:", err);
         setLoading(false);
       });
-  }, [categoryId]); // Important: dependency array includes categoryId
+  }, [categoryId]);
+
+  if (loading) return <p className="text-center py-10">Loading News...</p>;
 
   return (
-    <div>
-      <h2 className="text-xl font-bold mb-5 text-gray-800">Dragon News Home</h2>
-
-      {loading ? (
-        <div className="flex justify-center items-center h-64">
-          <span className="loading loading-spinner loading-lg"></span>
-        </div>
-      ) : newsList.length > 0 ? (
+    <div className="space-y-6">
+      {newsList.length > 0 ? (
         newsList.map((news) => <NewsCard key={news._id} news={news} />)
       ) : (
-        <p className="text-center py-10 text-gray-500">
-          No news found in this category.
+        <p className="text-center py-20 border-2 border-dashed">
+          No news in this category.
         </p>
       )}
     </div>

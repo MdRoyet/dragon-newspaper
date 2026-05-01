@@ -1,3 +1,4 @@
+"use client";
 import React from "react";
 import Image from "next/image";
 import {
@@ -12,15 +13,33 @@ import {
 import qZone1 from "@/assets/playground.png";
 import qZone2 from "@/assets/swimming.png";
 import qZone3 from "@/assets/class.png";
+import { authClient } from "@/lib/auth-client";
 
 const RightSidebar = () => {
+  const handleGoogleSignIn = async () => {
+    try {
+      await authClient.signIn.social({
+        provider: "google",
+        callbackURL: "/", // Ensure this is set to your home or dashboard
+      });
+    } catch (error) {
+      console.error("Google Sign-In Error:", error);
+    }
+  };
+
   return (
     <div className="space-y-8">
       {/* 1. Login With Section */}
       <section>
         <h2 className="font-bold text-xl mb-4 text-gray-800">Login With</h2>
         <div className="flex flex-col gap-2">
-          <button className="flex items-center justify-center gap-2 w-full py-2.5 border-2 border-blue-400 rounded-lg text-blue-500 font-medium hover:bg-blue-50 transition-colors">
+          <button
+            className="flex items-center justify-center gap-2 w-full py-2.5 border-2 border-blue-400 rounded-lg text-blue-500 font-medium hover:bg-blue-50 transition-colors"
+            onClick={() => {
+              console.log("Triggering Google Auth...");
+              handleGoogleSignIn();
+            }}
+          >
             <FaGoogle /> Login with Google
           </button>
           <button className="flex items-center justify-center gap-2 w-full py-2.5 border-2 border-gray-800 rounded-lg text-gray-800 font-medium hover:bg-gray-100 transition-colors">
